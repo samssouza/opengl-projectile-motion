@@ -2,7 +2,7 @@ import OpenGL
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from math import pow, radians, sin, cos, pi, sqrt, floor
+from math import pow, radians,degrees, sin, cos, atan, pi, sqrt, floor
 from random import randint
 from time import time, sleep
 
@@ -11,6 +11,10 @@ class World:
     anim_duration = 10
     w = 500
     h = 500
+
+    mouse_pos_x = 0
+    mouse_pos_y =0
+
     proportion = 10  #1m para 10 pixels
     objects = []
 
@@ -29,8 +33,8 @@ class World:
 
 class TrajectoryFunc:
     gravity = 10
-    v0 = 10
-    O = radians(45)
+    v0 = 0
+    O = radians(0)
 
     #Circle Utils Functions
     def get_time():
@@ -78,6 +82,8 @@ class Object:
     def physics(self):
         pass
 
+    def reset_timer(self):
+        self.start_time = time()
 class Circle(Object):
 
     def __init__(self, x, y, size, color):
@@ -203,15 +209,22 @@ class Trajectory(Object):
         for t in times:
             x = self.x + World.get_size_px(TrajectoryFunc.translation_x(t))
             y = self.y + World.get_size_px(TrajectoryFunc.translation_y(t))
-            print("x " + str(x) +" y "+ str(y))
             glVertex2f(x, y)
 
         glEnd()
 
+class Line(Object):
+
+
+    def draw(self):
+
+        glBegin(GL_LINES)
+        glVertex2f(self.x, self.y)
+        glVertex2f(World.mouse_pos_x, World.mouse_pos_y)
+        glEnd()
 
 
 class RenderThread:
-
 
     def run():
 
@@ -219,28 +232,42 @@ class RenderThread:
         glutInitDisplayMode(GLUT_RGBA)
         glutInitWindowSize(500, 500)
         glutInitWindowPosition(0, 0)
-        wind = glutCreateWindow("OpenGL Coding Practice")
+        RenderThread.window = glutCreateWindow("Trabalho")
 
         glutDisplayFunc(RenderThread.tick)
         glutIdleFunc(RenderThread.tick)
+        RenderThread.spawn_objects()
+
         glutKeyboardFunc(RenderThread.keyPressed)
         glutSpecialFunc(RenderThread.keyPressed)
+        glutMouseFunc(RenderThread.mousePressed)
+        glutPassiveMotionFunc(RenderThread.mouseMotion)
+
+        glutMainLoop()
+
+    def reset():
+
+        World.objects.clear()
+        RenderThread.spawn_objects()
+        TrajectoryFunc.O = 0
+        TrajectoryFunc.v0 = 0
+
+    def spawn_objects():
 
         scale = Scale(0, 0, World.get_size_m(10), (1, 1, 1))
-
         box_size = 10
         box_x = randint(0, World.get_window_size_m()["w"] - box_size)
         box = Box(box_x, 0, box_size, (0, 0, 1))
         circle = Circle(3, 3, 3, (0, 1, 0))
 
         trajectory = Trajectory(3, 3, 10, (1, 1, 1))
+        line = Line(3, 3, 0, (1, 1, 1))
 
         World.add_object(scale)
         World.add_object(box)
         World.add_object(circle)
+        World.add_object(line)
         World.add_object(trajectory)
-
-        glutMainLoop()
 
     def set_view_port():
 
@@ -266,6 +293,7 @@ class RenderThread:
         sleep(0.05)
         glutSwapBuffers()
 
+    # INPUTS
     def keyPressed(key, x, y):
 
         if key == GLUT_KEY_UP:
@@ -274,10 +302,34 @@ class RenderThread:
             World.objects[1].size -= 1
 
         if key == b'r' or key == b'R' :
-            print("Yes!!")
+
+            #Respawn obejcts in world
+            RenderThread.reset()
+
+
+    def mousePressed(button, state, x, y):
+
+        #Left Mouse Click
+        if button == 0:
+            last_index = len(World.objects) - 1
+            line = World.objects[last_index]
+            a = World.mouse_pos_x - line.x
+            b = World.mouse_pos_y - line.y
+            h = pow(a, 2) + pow(b, 2)
+            h = sqrt(h)
+
+            World.objects[2].reset_timer()
+            TrajectoryFunc.O = atan(b/a)
+            TrajectoryFunc.v0 = (World.get_size_m(h)/ World.anim_duration) * 10
+
+
+    def mouseMotion(x, y):
+        World.mouse_pos_x = x
+        World.mouse_pos_y = World.h - y
+
+
 
 
 if __name__ == '__main__':
     RenderThread.run()
-
 
