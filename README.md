@@ -11,3 +11,4 @@ Use the following keys to play:
 - Moving Mouse Pointer Over Canvas: Change the angle and velocity of projectile. Show as a white line in the canvas. 
 - Right Mouse Click: Throws ball. 
 
+![Sample](https://github.com/samssouza/opengl-projectile-motion/blob/master/execution-sample.jpg?raw=true)
